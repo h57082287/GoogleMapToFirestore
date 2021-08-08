@@ -15,6 +15,7 @@ firebase_admin.initialize_app(cred)
 # 建立db的連線
 db = firestore.client()
 
+
 # 讀取檔案並傳送至firebase
 with open('output-基隆.csv') as f:
     rows = csv.reader(f)
@@ -28,7 +29,7 @@ with open('output-基隆.csv') as f:
 
             # 非固定元素區
             for element in row:
-                #print(element)
+                print(element)
                 # 檢測是否為餐廳主題
                 if ((element.find('店')) != -1 or (element.find('餐廳') != -1) or (element.find('館') != -1) or (element.find('燒烤') != -1)) and len(element) < 4:
                     data['StoreClasses'] = element
@@ -53,6 +54,17 @@ with open('output-基隆.csv') as f:
                     else:
                         m = element.split('\n')
                         data['method'] = m
+                # 獲取地址
+                elif ((element.find('市') != -1) or (element.find('縣') != -1)) and len(element) < 4 :
+                    data['address'] = element
+                    if element.find('鄉') != -1:
+                        data['local'] = element[(element.find('鄉')-2):element.find('鄉')]
+                    elif element.find('區') != -1:
+                        data['local'] = element[(element.find('區')-2):element.find('區')]
+                    elif element.find('鎮') != -1:
+                        data['local'] = element[(element.find('鎮')-2):element.find('鎮')]
+                    elif element.find('市') != -1:
+                        data['local'] = element[(element.find('市')-2):element.find('市')]
         break
     print(data)
 
