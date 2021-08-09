@@ -54,7 +54,7 @@ with open('output-基隆.csv') as f:
                     else:
                         m = element.split('\n')
                         data['method'] = m
-                # 獲取地址
+                # 檢測地址
                 elif ((element.find('市') != -1) or (element.find('縣') != -1)):
                     data['address'] = element
                     if element.find('鄉') != -1:
@@ -65,6 +65,7 @@ with open('output-基隆.csv') as f:
                         data['local'] = element[(element.find('鎮')-2):element.find('鎮') + 1 ]
                     elif element.find('市') != -1:
                         data['local'] = element[(element.find('市')-2):element.find('市') + 1 ]
+                # 檢測電話
         break
     print(data)
 
