@@ -30,10 +30,13 @@ with open('output-基隆.csv') as f:
     rows = csv.reader(f)
     for row in rows:
         #print(row)
+        # 部分區域變數宣告區
         data = {}
         disc = {}
         idNum = []
         ElementNum = 0
+        imageNum = 0
+
         if len(row) != 0:
             # 固定元素區
             data['StoreName'] = row[0]
@@ -96,7 +99,7 @@ with open('output-基隆.csv') as f:
                 elif element.find('則評論') != -1:
                     data['totalDisc'] = element.split('則')[0]
                     ElementNum += 1
-                # 檢測評論
+                # 檢測評論(特殊說明: 因為每則評論皆獨立欄位，因此加入傳送的功能放到下一個檢測項目的開始)
                 elif (element.find('\n') != -1) and (element.find('https://') == -1) and (ElementNum < len(row)-4):
                     id  = RandomID()
                     buffer_Map = {}
@@ -106,6 +109,37 @@ with open('output-基隆.csv') as f:
                     disc[id] = buffer_Map
                     idNum.append(id)
                     ElementNum += 1
+                # 檢測菜單
+                elif (element.find('\n') != -1) and (element.find('https://') != -1) and (imageNum < 1):
+                    # 執行評論的id上傳
+                    data['disc'] = idNum
+                    # 菜單圖片處理
+                    meumImage = element.split('\n')
+                    data['meum'] = meumImage 
+                    imageNum += 1
+                    ElementNum += 1
+                # 檢測圖片
+                elif (element.find('\n') != -1) and (element.find('https://') != -1) and (imageNum >= 1):
+                    image = element.split('\n')
+                    data['image'] = image
+                    ElementNum += 1
+                # 檢測評論
+                elif (ElementNum == len(row)-2) and (element.find('https://') == -1 ) and (element.find('尚未提供照片') == -1):
+                    buffer_discTopic = []
+                    discTopic = element.split('\n')
+                    for d in discTopic:
+                        dd = {}
+                        try:
+                            topicName = d.split(' ')[0]
+                            num = d.split(' ')[1]
+                        except:
+                            continue
+                        dd['topicName'] = topicName
+                        dd['num'] = num
+                        buffer_discTopic.append(dd)
+                    data['discTopic'] = buffer_discTopic
+        #print(len(row))
+        #print(ElementNum)
         print(data)
         break
 
