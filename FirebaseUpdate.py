@@ -15,6 +15,8 @@ firebase_admin.initialize_app(cred)
 # 建立db的連線
 db = firestore.client()
 
+# 建立全域變數
+Tel = ['02','03','04','05','06','07','08','09']
 
 # 讀取檔案並傳送至firebase
 with open('output-基隆.csv') as f:
@@ -29,7 +31,7 @@ with open('output-基隆.csv') as f:
 
             # 非固定元素區
             for element in row:
-                print(element)
+                #print(element)
                 # 檢測是否為餐廳主題
                 if ((element.find('店')) != -1 or (element.find('餐廳') != -1) or (element.find('館') != -1) or (element.find('燒烤') != -1)) and len(element) < 4:
                     data['StoreClasses'] = element
@@ -66,8 +68,23 @@ with open('output-基隆.csv') as f:
                     elif element.find('市') != -1:
                         data['local'] = element[(element.find('市')-2):element.find('市') + 1 ]
                 # 檢測電話
+                elif (element[:2] in Tel) and (len(element.replace(' ','')) <= 10) :
+                    data['Tel'] = element.replace(' ','')
+                # 檢測經緯度
+                elif (element.split('.')[0].isdigit()) and (element.find('.') != -1) and (len(element.split('.')) <= 2) and (int(element.split('.')[0]) >= 22):
+                    if (int(element.split('.')[0]) >= 119):
+                        data['lat'] = element
+                    elif (int(element.split('.')[0]) >= 22):
+                        data['lng'] = element
+                # 檢測總評論
+                elif element.find('則評論') != -1:
+                    data['totalDisc'] = element.split('則')[0]
+                # 檢測評論
+                elif (element.find('\n') != -1) and (element.find('https://') == -1) and (element.split(' ')[1].isdigit()) != True:
+                    print(element.split(' ')[1])
+                    print('---------------------------------')
+        #print(data)
         break
-    print(data)
 
             
 
