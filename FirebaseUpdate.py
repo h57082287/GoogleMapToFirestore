@@ -21,7 +21,7 @@ db = firestore.client()
 Tel = ['02','03','04','05','06','07','08','09']
 
 # 亂數編號生成器
-def RandomID(Len = 100):
+def RandomID(Len = 50):
     random_str = ''.join(random.sample(string.ascii_letters + string.digits, Len))
     return random_str
 
@@ -105,11 +105,8 @@ with open('output-基隆.csv') as f:
                     buffer_Map['disc'] = element.split('\n')[2]
                     disc[id] = buffer_Map
                     idNum.append(id)
-                    print('---------------------------------')
                     ElementNum += 1
-        print(ElementNum)
-        print(len(row))
-        #print(data)
+        print(data)
         break
 
             
