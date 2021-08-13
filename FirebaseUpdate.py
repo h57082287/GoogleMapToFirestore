@@ -2,11 +2,14 @@
 import csv
 import time
 import firebase_admin
+from google.cloud import firestore
 from firebase_admin import credentials
 from firebase_admin import firestore
 import random
 import string
 
+# 輸入地區
+localcation = input('請輸入地區:')
 
 # 建立金鑰
 cred = credentials.Certificate('serviceAccount.json')
@@ -25,18 +28,27 @@ def RandomID(Len = 50):
     random_str = ''.join(random.sample(string.ascii_letters + string.digits, Len))
     return random_str
 
+def UpdateDatabase(mod,table,sn,data):
+    if mod == '1':
+        db.collection('資料庫',table,localcation).document(sn).set(data)
+    elif mod == '2':
+        db.collection('資料庫',table,'詳細資料').document(sn).set(data)
+
 # 讀取檔案並傳送至firebase
-with open('output-基隆.csv') as f:
+with open('output-'+ localcation +'.csv') as f:
     rows = csv.reader(f)
     for row in rows:
         #print(row)
         # 部分區域變數宣告區
-        data = {}
+        data = {"meum":[],"image":[],"discTopic":[]}
         disc = {}
+        buffer_Map = {}
         idNum = []
         ElementNum = 0
         imageNum = 0
-
+        latitude = 0.00
+        longitude = 0.00
+        
         if len(row) != 0:
             # 固定元素區
             data['StoreName'] = row[0]
@@ -91,9 +103,11 @@ with open('output-基隆.csv') as f:
                 # 檢測經緯度
                 elif (element.split('.')[0].isdigit()) and (element.find('.') != -1) and (len(element.split('.')) <= 2) and (int(element.split('.')[0]) >= 22):
                     if (int(element.split('.')[0]) >= 119):
-                        data['lat'] = element
+                        latitude = float(element)
                     elif (int(element.split('.')[0]) >= 22):
-                        data['lng'] = element
+                        longitude = float(element)
+                        location=firestore.GeoPoint(longitude, latitude)
+                        data['latlnt'] = location
                     ElementNum += 1
                 # 檢測總評論
                 elif element.find('則評論') != -1:
@@ -102,28 +116,31 @@ with open('output-基隆.csv') as f:
                 # 檢測評論(特殊說明: 因為每則評論皆獨立欄位，因此加入傳送的功能放到下一個檢測項目的開始)
                 elif (element.find('\n') != -1) and (element.find('https://') == -1) and (ElementNum < len(row)-4):
                     id  = RandomID()
-                    buffer_Map = {}
                     buffer_Map['Name'] = element.split('\n')[0]
                     buffer_Map['Star'] = element.split('\n')[1]
-                    buffer_Map['disc'] = element.split('\n')[2]
-                    disc[id] = buffer_Map
+                    try:
+                        buffer_Map['disc'] = element.split('\n')[2]
+                    except:
+                        pass
+                    #disc[id] = buffer_Map
+                    UpdateDatabase('2','評論',id,buffer_Map)
                     idNum.append(id)
                     ElementNum += 1
-                # 檢測菜單
+                # 檢測圖片
                 elif (element.find('\n') != -1) and (element.find('https://') != -1) and (imageNum < 1):
                     # 執行評論的id上傳
                     data['disc'] = idNum
-                    # 菜單圖片處理
+                    # 圖片處理
                     meumImage = element.split('\n')
                     data['meum'] = meumImage 
                     imageNum += 1
                     ElementNum += 1
-                # 檢測圖片
+                # 檢測菜單
                 elif (element.find('\n') != -1) and (element.find('https://') != -1) and (imageNum >= 1):
                     image = element.split('\n')
                     data['image'] = image
                     ElementNum += 1
-                # 檢測評論
+                # 檢測評論主題
                 elif (ElementNum == len(row)-2) and (element.find('https://') == -1 ) and (element.find('尚未提供照片') == -1):
                     buffer_discTopic = []
                     discTopic = element.split('\n')
@@ -138,10 +155,21 @@ with open('output-基隆.csv') as f:
                         dd['num'] = num
                         buffer_discTopic.append(dd)
                     data['discTopic'] = buffer_discTopic
-        #print(len(row))
-        #print(ElementNum)
-        print(data)
-        break
+            # 上傳資料
+            """
+            Update_Data = {}
+            Update_Data[data['StoreName']] = data
+            print(Update_Data)
+            """
+            print(data)
+            # 嘗試上傳
+            try:
+                UpdateDatabase('1','地區',data['StoreName'],data)
+            except:
+                print("發生錯誤:" + data['StoreName'])
+                with open('log.txt','a+') as f:
+                    f.write('發生上傳錯誤('+ data['StoreName']+')\n')
+        #break
 
             
 
