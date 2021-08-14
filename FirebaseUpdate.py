@@ -69,7 +69,21 @@ with open('output-'+ localcation +'.csv') as f:
             "discTopic":[],
             "StoreClasses":None,
             "PopularityScore": 0.00,
-            "TasteScore":0.00
+            "TasteScore":0.00,
+            "RestaurantQuality_Top":None,
+            "RestaurantQualit_chain":False,
+            "Business_breakfast":False,
+            "Business_lunch":False,
+            "Business_dinner":False,
+            "Business_NightSnack":False,
+            "service_book":False,
+            "service_coupon":False,
+            "service_delivery":False,
+            "service_takeout":False,
+            "equipment_Box":False,
+            "equipment_wifi":False,
+            "equipment_parking":False,
+            "equipment_BabyChair":False,
             }
         disc = {}
         buffer_Map = {}
