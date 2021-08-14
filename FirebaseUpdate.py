@@ -84,8 +84,14 @@ with open('output-'+ localcation +'.csv') as f:
                 #print(element)
                 # 檢測是否為餐廳主題
                 if ((element.find('店')) != -1 or (element.find('餐廳') != -1) or (element.find('館') != -1) or (element.find('燒烤') != -1)) and len(element) < 4:
-                    
-                    data['StoreClasses'] = element
+                    ## 走訪所有分類已進行歸納
+                    for key,value in newClasses.items():
+                        for i in value:
+                            if i == element:
+                                data['StoreClasses'] = key
+                    ## 無法歸納則以原分類
+                    if data['StoreClasses'] == '':
+                        data['StoreClasses'] = element
                     ElementNum += 1
                 # 檢測是否為營業時間
                 elif (element.find('星期') != -1) or (element.find('尚未提供時間')!= -1):
