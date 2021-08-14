@@ -62,7 +62,15 @@ with open('output-'+ localcation +'.csv') as f:
     for row in rows:
         #print(row)
         # 部分區域變數宣告區
-        data = {"totalDisc":0,"meum":[],"image":[],"discTopic":[],"StoreClasses":None}
+        data = {
+            "totalDisc":0,
+            "meum":[],
+            "image":[],
+            "discTopic":[],
+            "StoreClasses":None,
+            "PopularityScore": 0.00,
+            "TasteScore":0.00
+            }
         disc = {}
         buffer_Map = {}
         idNum = []
