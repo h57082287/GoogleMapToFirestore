@@ -54,10 +54,7 @@ def RandomID(Len = 50):
     return random_str
 
 def UpdateDatabase(mod,table,sn,data):
-    if mod == '1':
-        db.collection('資料庫',table,localcation).document(sn).set(data)
-    elif mod == '2':
-        db.collection('資料庫',table,'詳細資料').document(sn).set(data)
+    db.collection('資料庫',table,mod).document(sn).set(data)
 
 # 讀取檔案並傳送至firebase
 with open('output-'+ localcation +'.csv') as f:
@@ -65,7 +62,7 @@ with open('output-'+ localcation +'.csv') as f:
     for row in rows:
         #print(row)
         # 部分區域變數宣告區
-        data = {"meum":[],"image":[],"discTopic":[]}
+        data = {"totalDisc":0,"meum":[],"image":[],"discTopic":[],"StoreClasses":None}
         disc = {}
         buffer_Map = {}
         idNum = []
@@ -76,6 +73,7 @@ with open('output-'+ localcation +'.csv') as f:
         
         if len(row) != 0:
             # 固定元素區
+            data['uid'] = RandomID()
             data['StoreName'] = row[0]
             data['Star'] = row[1]
             ElementNum += 2
@@ -90,7 +88,7 @@ with open('output-'+ localcation +'.csv') as f:
                             if i == element:
                                 data['StoreClasses'] = key
                     ## 無法歸納則以原分類
-                    if data['StoreClasses'] == '':
+                    if data['StoreClasses'] == "":
                         data['StoreClasses'] = element
                     ElementNum += 1
                 # 檢測是否為營業時間
@@ -155,7 +153,7 @@ with open('output-'+ localcation +'.csv') as f:
                     except:
                         pass
                     #disc[id] = buffer_Map
-                    UpdateDatabase('2','評論',id,buffer_Map)
+                    UpdateDatabase('詳細資料','評論',id,buffer_Map)
                     idNum.append(id)
                     ElementNum += 1
                 # 檢測圖片
@@ -196,7 +194,8 @@ with open('output-'+ localcation +'.csv') as f:
             print(data)
             # 嘗試上傳
             try:
-                UpdateDatabase('1','地區',data['StoreName'],data)
+                UpdateDatabase(localcation,'地區',data['StoreName'],data)
+                UpdateDatabase('詳細資料','商家',data['uid'],None)
             except:
                 print("發生錯誤:" + data['StoreName'])
                 with open('log.txt','a+') as f:
