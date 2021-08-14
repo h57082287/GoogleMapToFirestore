@@ -21,6 +21,8 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 # 建立全域變數
+## 上傳計數器
+Datanum = 0
 ## 電話判別
 Tel = ['02','03','04','05','06','07','08','09']
 ## 餐廳分類歸納
@@ -213,11 +215,14 @@ with open('output-'+ localcation +'.csv') as f:
             Update_Data[data['StoreName']] = data
             print(Update_Data)
             """
+            print('---------------------------------------------------------------------------')
             print(data)
             # 嘗試上傳
             try:
                 UpdateDatabase(localcation,'地區',data['StoreName'],data)
                 UpdateDatabase('詳細資料','商家',data['uid'],None)
+                Datanum += 1
+                print('上傳筆數:' + str(Datanum))
             except:
                 print("發生錯誤:" + data['StoreName'])
                 with open('log.txt','a+') as f:
