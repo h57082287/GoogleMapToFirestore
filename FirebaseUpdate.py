@@ -1,8 +1,9 @@
 # 引入套件
 import csv
-import time
+import datetime
 import firebase_admin
-from google.cloud import firestore
+from google.cloud import firestore_v1
+from google.cloud.firestore import GeoPoint
 from firebase_admin import credentials
 from firebase_admin import firestore
 import random
@@ -21,8 +22,10 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 # 建立全域變數
+
 ## 上傳計數器
 Datanum = 0
+
 ## 電話判別
 Tel = ['02','03','04','05','06','07','08','09']
 ## 餐廳分類歸納
@@ -56,7 +59,10 @@ def RandomID(Len = 50):
     return random_str
 
 def UpdateDatabase(mod,table,sn,data):
-    db.collection('資料庫',table,mod).document(sn).set(data)
+    try:
+        db.collection('資料庫',table,mod).document(sn).update(data)
+    except:
+        db.collection('資料庫',table,mod).document(sn).set(data)
 
 # 讀取檔案並傳送至firebase
 with open('output-'+ localcation +'.csv') as f:
@@ -65,15 +71,18 @@ with open('output-'+ localcation +'.csv') as f:
         #print(row)
         # 部分區域變數宣告區
         data = {
+            "AccessNum":0,
+            "Person_Average_Price":0,
+            "NickName":'',
             "totalDisc":0,
-            "meum":[],
+            "menu":[],
             "image":[],
             "discTopic":[],
-            "StoreClasses":None,
+            "StoreCategory":None,
             "PopularityScore": 0.00,
-            "TasteScore":0.00,
+            "Taste_Score":0.00,
             "RestaurantQuality_Top":None,
-            "RestaurantQualit_chain":False,
+            "RestaurantQuality_chain":[],
             "Business_breakfast":False,
             "Business_lunch":False,
             "Business_dinner":False,
@@ -82,10 +91,25 @@ with open('output-'+ localcation +'.csv') as f:
             "service_coupon":False,
             "service_delivery":False,
             "service_takeout":False,
+            "service_pet":False,
+            "service_VegetarianFood":False,
             "equipment_Box":False,
             "equipment_wifi":False,
             "equipment_parking":False,
             "equipment_BabyChair":False,
+            "Special_Business":[{"content":None,"Business":False,"Time":""}],
+            "Environment_Score":0.00,
+            "Service_Score":0.00,
+            "Cooperate":False,
+            "Meals":[],
+            "Coupon":[],
+            "Tel":None,
+            "method":[],
+            "local":None,
+            "StoreTime":{"Business" : False,"OpenTime":"尚未提供"},
+            "StoreCategory":None,
+            "address":None,
+            "discTopic":None,
             }
         disc = {}
         buffer_Map = {}
@@ -95,9 +119,11 @@ with open('output-'+ localcation +'.csv') as f:
         latitude = 0.00
         longitude = 0.00
         
+
         if len(row) != 0:
+            ID = RandomID()
             # 固定元素區
-            data['uid'] = RandomID()
+            data['uid'] = ID
             data['StoreName'] = row[0]
             data['Star'] = row[1]
             ElementNum += 2
@@ -105,14 +131,15 @@ with open('output-'+ localcation +'.csv') as f:
             for element in row:
                 #print(element)
                 # 檢測是否為餐廳主題
-                if ((element.find('店')) != -1 or (element.find('餐廳') != -1) or (element.find('館') != -1) or (element.find('燒烤') != -1)) and len(element) < 4:
+                if ((element.find('店')) != -1 or (element.find('餐廳') != -1) or (element.find('館') != -1) or (element.find('燒烤') != -1)) and len(element) <= 4:
                     ## 走訪所有分類已進行歸納
                     for key,value in newClasses.items():
                         if element in value:
-                            data['StoreClasses'] = key
+                            data['StoreCategory'] = key
+                            break
                         ## 無法歸納則以原分類
                         else:
-                            data['StoreClasses'] = element
+                            data['StoreCategory'] = element
                     ElementNum += 1
                 # 檢測是否為營業時間
                 elif (element.find('星期') != -1) or (element.find('尚未提供時間')!= -1):
@@ -121,24 +148,25 @@ with open('output-'+ localcation +'.csv') as f:
                        data['StoreTime'] = {'Business' : False,'OpenTime':'尚未提供'}
                     else:
                         DT = element.split('\n')
-                        #print(DT)
                         for d in DT:
                             if d.find('休息') == -1:
                                  buffer_Time.append({'Business' : True,'OpenTime':d[3:]})
                             else:
                                 buffer_Time.append({'Business' : False,'OpenTime':'休息'})
+                        buffer_Time.pop()
                         data['StoreTime'] = buffer_Time
                     ElementNum += 1
                 # 檢測運送方式
-                elif (element.find('外送') != -1) or (element.find('外帶') != -1) or (element.find('內用') != -1) or ((element.find('尚未提供') != -1)) :
+                elif ((element.find('外送') != -1) or (element.find('外帶') != -1) or (element.find('內用') != -1) or ((element.find('尚未提供') != -1))) and (len(element) <= 3) :
                     if element.find('尚未提供') != -1 :
                         data['method'] = '尚未提供'
                     else:
                         m = element.split('\n')
+                        m.pop()
                         data['method'] = m
                     ElementNum += 1
                 # 檢測地址
-                elif ((element.find('市') != -1) or (element.find('縣') != -1)):
+                elif ((element.find('市') != -1) or (element.find('縣') != -1)) and len(element) < 25:
                     data['address'] = element
                     if element.find('鄉') != -1:
                         data['local'] = element[(element.find('鄉')-2):element.find('鄉') + 1 ]
@@ -151,7 +179,10 @@ with open('output-'+ localcation +'.csv') as f:
                     ElementNum += 1
                 # 檢測電話
                 elif (element[:2] in Tel) and (len(element.replace(' ','')) <= 10) :
-                    data['Tel'] = element.replace(' ','')
+                    Tel.append(element)
+                    buffer_Tel = []
+                    buffer_Tel.append(Tel[len(Tel)-1])
+                    data['Tel'] = buffer_Tel
                     ElementNum += 1
                 # 檢測經緯度
                 elif (element.split('.')[0].isdigit()) and (element.find('.') != -1) and (len(element.split('.')) <= 2) and (int(element.split('.')[0]) >= 22):
@@ -159,16 +190,32 @@ with open('output-'+ localcation +'.csv') as f:
                         latitude = float(element)
                     elif (int(element.split('.')[0]) >= 22):
                         longitude = float(element)
-                        location=firestore.GeoPoint(longitude, latitude)
+                        location=GeoPoint(longitude, latitude)
+                        
                         data['latlnt'] = location
                     ElementNum += 1
                 # 檢測總評論
                 elif element.find('則評論') != -1:
-                    data['totalDisc'] = element.split('則')[0]
+                    try:
+                        data['totalDisc'] = int(element.split('則')[0])
+                    except:
+                        data['totalDisc'] = 0 
                     ElementNum += 1
                 # 檢測評論(特殊說明: 因為每則評論皆獨立欄位，因此加入傳送的功能放到下一個檢測項目的開始)
                 elif (element.find('\n') != -1) and (element.find('https://') == -1) and (ElementNum < len(row)-4):
                     id  = RandomID()
+                    date = datetime.datetime.now()
+                    buffer_Map = {
+                        "uid":RandomID(),
+                        "time":date,
+                        "TasteScore":0.00,
+                        "Environment_Score":0.00,
+                        "Service_Score":0.00,
+                        "image":[],
+                        "Recommended":[],
+                        "Anonymous":False,
+                        "Person_Average_Price":0,
+                    }
                     buffer_Map['Name'] = element.split('\n')[0]
                     buffer_Map['Star'] = element.split('\n')[1]
                     try:
@@ -176,27 +223,55 @@ with open('output-'+ localcation +'.csv') as f:
                     except:
                         pass
                     #disc[id] = buffer_Map
-                    UpdateDatabase('詳細資料','評論',id,buffer_Map)
-                    idNum.append(id)
+                    userUid = RandomID()
+                    # 用戶資訊
+                    userData ={
+                        "Device":"test",
+                        "phone":"0912345678",
+                        "email":"test@gmail.com",
+                        "nickname":"test",
+                        "local":"桃園市",
+                        "Positioning":GeoPoint(24.9482449,121.2028268),
+                        "Self_Introduction":"test test test",
+                        "Sex":"男",
+                        "Birthday":datetime.datetime.today(),
+                        "age":18,
+                        "image":None,
+                        "disc":db.collection('資料庫',"評論",ID).document(userUid),
+                        "Favorite_Restaurant":[],
+                        "Coupon_order":[],
+                        "book":[],
+                        "Red_Envelope":[],
+                        "focus_on_num":0,
+                        "Fans":0,
+                        "focus_on_id":[],
+                        "Fans_id":[],
+                    }
+                    UpdateDatabase(ID,'評論',userUid,buffer_Map) # 建立評論
+                    idNum.append(db.collection('資料庫',"評論",str(ID)).document(userUid))
+                    UpdateDatabase(ID,'用戶',userUid,userData) # 建立用戶
                     ElementNum += 1
                 # 檢測圖片
                 elif (element.find('\n') != -1) and (element.find('https://') != -1) and (imageNum < 1):
                     # 執行評論的id上傳
                     data['disc'] = idNum
                     # 圖片處理
-                    meumImage = element.split('\n')
-                    data['meum'] = meumImage 
+                    menuImage = element.split('\n')
+                    menuImage.pop()
+                    data['menu'] = menuImage 
                     imageNum += 1
                     ElementNum += 1
                 # 檢測菜單
                 elif (element.find('\n') != -1) and (element.find('https://') != -1) and (imageNum >= 1):
                     image = element.split('\n')
+                    image.pop()
                     data['image'] = image
                     ElementNum += 1
                 # 檢測評論主題
                 elif (ElementNum == len(row)-2) and (element.find('https://') == -1 ) and (element.find('尚未提供照片') == -1):
                     buffer_discTopic = []
                     discTopic = element.split('\n')
+                    discTopic.pop()
                     for d in discTopic:
                         dd = {}
                         try:
@@ -208,24 +283,18 @@ with open('output-'+ localcation +'.csv') as f:
                         dd['num'] = num
                         buffer_discTopic.append(dd)
                     data['discTopic'] = buffer_discTopic
-            # 上傳資料
-            """
-            Update_Data = {}
-            Update_Data[data['StoreName']] = data
-            print(Update_Data)
-            """
             print('---------------------------------------------------------------------------')
-            print(data)
+            #print(data)
             # 嘗試上傳
             try:
                 UpdateDatabase(localcation,'地區',data['StoreName'],data)
-                UpdateDatabase('詳細資料','商家',data['uid'],None)
                 Datanum += 1
                 print('上傳筆數:' + str(Datanum))
             except:
                 print("發生錯誤:" + data['StoreName'])
                 with open('log.txt','a+') as f:
                     f.write('發生上傳錯誤('+ data['StoreName']+')\n')
+            
         #break
 
             
