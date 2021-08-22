@@ -59,12 +59,12 @@ def RandomID(Len = 50):
     return random_str
 
 def UpdateDatabase(mod,table,sn,data):
+    """
     try:
-        print('上傳方法:更新')
         db.collection('資料庫',table,mod).document(sn).update(data)
     except:
-        print('上傳方法:新增')
-        db.collection('資料庫',table,mod).document(sn).set(data)
+    """
+    db.collection('資料庫',table,mod).document(sn).set(data)
 
 # 讀取檔案並傳送至firebase
 with open('output-'+ localcation +'.csv') as f:
