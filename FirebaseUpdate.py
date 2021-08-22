@@ -165,7 +165,6 @@ with open('output-'+ localcation +'.csv') as f:
                         m = element.split('\n')
                         m.pop()
                         data['method'] = m
-                    print(data['method'])
                     ElementNum += 1
                 # 檢測地址
                 elif ((element.find('市') != -1) or (element.find('縣') != -1)) and len(element) < 25:
@@ -297,7 +296,7 @@ with open('output-'+ localcation +'.csv') as f:
                 with open('log.txt','a+') as f:
                     f.write('發生上傳錯誤('+ data['StoreName']+')\n')
             
-        break
+        #break
 
             
 
