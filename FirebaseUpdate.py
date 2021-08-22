@@ -25,7 +25,7 @@ db = firestore.client()
 
 ## 上傳計數器
 Datanum = 0
-
+testNum = 0
 ## 電話判別
 Tel = ['02','03','04','05','06','07','08','09']
 ## 餐廳分類歸納
@@ -105,13 +105,12 @@ with open('output-'+ localcation +'.csv') as f:
             "Cooperate":False,
             "Meals":[],
             "Coupon":[],
-            "Tel":None,
+            "Tel":[],
             "method":[],
             "local":None,
             "StoreTime":{"Business" : False,"OpenTime":"尚未提供"},
             "StoreCategory":None,
             "address":None,
-            "discTopic":None,
             }
         disc = {}
         buffer_Map = {}
@@ -159,13 +158,14 @@ with open('output-'+ localcation +'.csv') as f:
                         data['StoreTime'] = buffer_Time
                     ElementNum += 1
                 # 檢測運送方式
-                elif ((element.find('外送') != -1) or (element.find('外帶') != -1) or (element.find('內用') != -1) or ((element.find('尚未提供') != -1))) and (len(element) <= 3) :
+                elif ((element.find('外送') != -1) or (element.find('外帶') != -1) or (element.find('內用') != -1) or ((element.find('尚未提供') != -1))) and (len(element.split('\n')) <= 4) :
                     if element.find('尚未提供') != -1 :
                         data['method'] = '尚未提供'
                     else:
                         m = element.split('\n')
                         m.pop()
                         data['method'] = m
+                    print(data['method'])
                     ElementNum += 1
                 # 檢測地址
                 elif ((element.find('市') != -1) or (element.find('縣') != -1)) and len(element) < 25:
@@ -270,7 +270,7 @@ with open('output-'+ localcation +'.csv') as f:
                     data['image'] = image
                     ElementNum += 1
                 # 檢測評論主題
-                elif (ElementNum == len(row)-2) and (element.find('https://') == -1 ) and (element.find('尚未提供照片') == -1):
+                elif (ElementNum == len(row)-2) and (element.find('https://') == -1 ) and (element.find('尚未提供照片') == -1) and (element != ''):
                     buffer_discTopic = []
                     discTopic = element.split('\n')
                     discTopic.pop()
@@ -297,7 +297,7 @@ with open('output-'+ localcation +'.csv') as f:
                 with open('log.txt','a+') as f:
                     f.write('發生上傳錯誤('+ data['StoreName']+')\n')
             
-        #break
+        break
 
             
 
