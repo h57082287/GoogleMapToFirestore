@@ -269,7 +269,8 @@ with open('output-'+ localcation +'.csv') as f:
                     data['image'] = image
                     ElementNum += 1
                 # 檢測評論主題
-                elif (ElementNum == len(row)-2) and (element.find('https://') == -1 ) and (element.find('尚未提供照片') == -1) and (element != ''):
+                elif (ElementNum == len(row)-3) and (element.find('https://') == -1 ) and (element.find('尚未提供照片') == -1) and (element != ''):
+                    print(len(row))
                     buffer_discTopic = []
                     discTopic = element.split('\n')
                     discTopic.pop()
@@ -284,6 +285,7 @@ with open('output-'+ localcation +'.csv') as f:
                         dd['num'] = num
                         buffer_discTopic.append(dd)
                     data['discTopic'] = buffer_discTopic
+                    #print(data['discTopic'])
             print('---------------------------------------------------------------------------')
             print(data)
             # 嘗試上傳
